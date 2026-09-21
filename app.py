@@ -1,273 +1,204 @@
 import streamlit as st
-import random
+import pandas as pd
+import joblib
 
-# ---------------------------------------------------------
-# CONFIGURACIÓN
-# ---------------------------------------------------------
+
+# --------------------------------------------------
+# Configuración
+# --------------------------------------------------
 
 st.set_page_config(
-    page_title="Quiz de Machine Learning",
-    page_icon="🤖",
+    page_title="Predicción de Diabetes",
+    page_icon="🩺",
     layout="centered"
 )
 
-# ---------------------------------------------------------
-# BANCO DE PREGUNTAS
-# ---------------------------------------------------------
 
-PREGUNTAS = [
-    {
-        "pregunta": "¿Qué es Machine Learning?",
-        "opciones": [
-            "Una técnica para que las computadoras aprendan a partir de datos",
-            "Un lenguaje de programación",
-            "Un tipo de sistema operativo",
-            "Una base de datos"
-        ],
-        "respuesta": "Una técnica para que las computadoras aprendan a partir de datos"
-    },
-    {
-        "pregunta": "¿Cuál de los siguientes es un tipo de Machine Learning?",
-        "opciones": [
-            "Aprendizaje supervisado",
-            "Aprendizaje manual",
-            "Aprendizaje mecánico",
-            "Aprendizaje secuencial"
-        ],
-        "respuesta": "Aprendizaje supervisado"
-    },
-    {
-        "pregunta": "¿Qué caracteriza al aprendizaje supervisado?",
-        "opciones": [
-            "Utiliza datos que contienen ejemplos con respuestas conocidas",
-            "No utiliza ningún dato",
-            "Solo funciona con imágenes",
-            "No necesita entrenamiento"
-        ],
-        "respuesta": "Utiliza datos que contienen ejemplos con respuestas conocidas"
-    },
-    {
-        "pregunta": "¿Qué caracteriza al aprendizaje no supervisado?",
-        "opciones": [
-            "Busca patrones en datos sin etiquetas conocidas",
-            "Siempre necesita un profesor humano",
-            "Solo puede clasificar imágenes",
-            "Utiliza únicamente datos etiquetados"
-        ],
-        "respuesta": "Busca patrones en datos sin etiquetas conocidas"
-    },
-    {
-        "pregunta": "¿Cuál es un ejemplo de aprendizaje supervisado?",
-        "opciones": [
-            "Predecir el precio de una casa usando ejemplos históricos",
-            "Agrupar clientes sin categorías previamente definidas",
-            "Encontrar grupos de documentos similares sin etiquetas",
-            "Explorar datos sin buscar una predicción"
-        ],
-        "respuesta": "Predecir el precio de una casa usando ejemplos históricos"
-    },
-    {
-        "pregunta": "¿Qué es un modelo de Machine Learning?",
-        "opciones": [
-            "Un sistema que aprende patrones de los datos para realizar una tarea",
-            "Un archivo de texto sin información",
-            "Un dispositivo físico para almacenar datos",
-            "Un lenguaje de programación"
-        ],
-        "respuesta": "Un sistema que aprende patrones de los datos para realizar una tarea"
-    },
-    {
-        "pregunta": "¿Qué significa entrenar un modelo?",
-        "opciones": [
-            "Hacer que el modelo aprenda a partir de datos",
-            "Eliminar todos los datos",
-            "Instalar un sistema operativo",
-            "Cambiar el idioma de un programa"
-        ],
-        "respuesta": "Hacer que el modelo aprenda a partir de datos"
-    },
-    {
-        "pregunta": "¿Para qué se utiliza normalmente un conjunto de datos de prueba?",
-        "opciones": [
-            "Para evaluar el rendimiento del modelo con datos que no utilizó para entrenarse",
-            "Para entrenar siempre el modelo desde cero",
-            "Para eliminar errores de programación",
-            "Para guardar únicamente imágenes"
-        ],
-        "respuesta": "Para entrenar siempre el modelo desde cero"
-    },
-    {
-        "pregunta": "¿Cuál de estos problemas puede resolverse mediante clasificación?",
-        "opciones": [
-            "Determinar si un correo es spam o no spam",
-            "Calcular únicamente el promedio de una lista",
-            "Ordenar archivos alfabéticamente",
-            "Cambiar el nombre de una carpeta"
-        ],
-        "respuesta": "Determinar si un correo es spam o no spam"
-    },
-    {
-        "pregunta": "¿Cuál es un ejemplo de aprendizaje no supervisado?",
-        "opciones": [
-            "Agrupar clientes según características similares sin etiquetas",
-            "Predecir si un paciente tiene una enfermedad usando ejemplos etiquetados",
-            "Predecir el precio de una vivienda",
-            "Clasificar correos como spam utilizando ejemplos previamente etiquetados"
-        ],
-        "respuesta": "Agrupar clientes según características similares sin etiquetas"
-    }
-]
+# --------------------------------------------------
+# Cargar modelo
+# --------------------------------------------------
 
-# ---------------------------------------------------------
-# FUNCIÓN PARA CREAR UN NUEVO QUIZ
-# ---------------------------------------------------------
-
-def crear_quiz():
-    # Seleccionamos solamente 5 preguntas de las 10
-    preguntas_seleccionadas = random.sample(PREGUNTAS, 5)
-
-    quiz = []
-
-    for pregunta in preguntas_seleccionadas:
-        opciones = pregunta["opciones"].copy()
-
-        # Mezclamos las alternativas
-        random.shuffle(opciones)
-
-        quiz.append({
-            "pregunta": pregunta["pregunta"],
-            "opciones": opciones,
-            "respuesta": pregunta["respuesta"]
-        })
-
-    return quiz
+@st.cache_resource
+def load_model():
+    return joblib.load("logistic_regression_model.pkl")
 
 
-# ---------------------------------------------------------
-# INICIALIZAR SESIÓN
-# ---------------------------------------------------------
+try:
+    model = load_model()
+except Exception as e:
+    st.error(
+        "No se pudo cargar el modelo. "
+        "Verifica que 'logistic_regression_model.pkl' "
+        "se encuentre en el repositorio."
+    )
+    st.stop()
 
-if "quiz" not in st.session_state:
-    st.session_state.quiz = crear_quiz()
 
-if "resultado" not in st.session_state:
-    st.session_state.resultado = None
+# --------------------------------------------------
+# Interfaz
+# --------------------------------------------------
 
-
-# ---------------------------------------------------------
-# TÍTULO
-# ---------------------------------------------------------
-
-st.title("🤖 Quiz de Machine Learning")
+st.title("🩺 Predicción de Diabetes")
 
 st.write(
-    "Pon a prueba tus conocimientos básicos sobre Machine Learning, "
-    "sus tipos y conceptos generales."
+    "Ingresa los datos del paciente para obtener una "
+    "predicción mediante el modelo de Machine Learning."
 )
 
-st.info("📝 Responde las 5 preguntas y luego presiona **Comprobar respuestas**.")
+st.info(
+    "La predicción es una estimación del modelo y no constituye "
+    "un diagnóstico médico."
+)
 
 
-# ---------------------------------------------------------
-# FORMULARIO
-# ---------------------------------------------------------
+# --------------------------------------------------
+# Formulario
+# --------------------------------------------------
 
-with st.form("quiz_form"):
+with st.form("diabetes_form"):
 
-    respuestas_usuario = []
+    col1, col2 = st.columns(2)
 
-    for i, pregunta in enumerate(st.session_state.quiz):
-
-        st.subheader(f"Pregunta {i + 1}")
-
-        st.write(f"**{pregunta['pregunta']}**")
-
-        respuesta = st.radio(
-            "Selecciona una alternativa:",
-            pregunta["opciones"],
-            key=f"pregunta_{i}",
-            index=None
+    with col1:
+        pregnancies = st.number_input(
+            "Pregnancies",
+            min_value=0,
+            max_value=20,
+            value=0,
+            step=1
         )
 
-        respuestas_usuario.append(respuesta)
+        glucose = st.number_input(
+            "Glucose",
+            min_value=0.0,
+            max_value=300.0,
+            value=120.0,
+            step=1.0
+        )
 
-        st.divider()
+        blood_pressure = st.number_input(
+            "BloodPressure",
+            min_value=0.0,
+            max_value=200.0,
+            value=70.0,
+            step=1.0
+        )
 
-    enviar = st.form_submit_button(
-        "✅ Comprobar respuestas",
+        skin_thickness = st.number_input(
+            "SkinThickness",
+            min_value=0.0,
+            max_value=100.0,
+            value=20.0,
+            step=1.0
+        )
+
+    with col2:
+        insulin = st.number_input(
+            "Insulin",
+            min_value=0.0,
+            max_value=1000.0,
+            value=80.0,
+            step=1.0
+        )
+
+        bmi = st.number_input(
+            "BMI",
+            min_value=0.0,
+            max_value=70.0,
+            value=25.0,
+            step=0.1
+        )
+
+        diabetes_pedigree = st.number_input(
+            "DiabetesPedigreeFunction",
+            min_value=0.0,
+            max_value=3.0,
+            value=0.5,
+            step=0.01
+        )
+
+        age = st.number_input(
+            "Age",
+            min_value=1,
+            max_value=120,
+            value=30,
+            step=1
+        )
+
+    submitted = st.form_submit_button(
+        "🔍 Realizar predicción",
         use_container_width=True
     )
 
 
-# ---------------------------------------------------------
-# EVALUAR RESPUESTAS
-# ---------------------------------------------------------
+# --------------------------------------------------
+# Predicción
+# --------------------------------------------------
 
-if enviar:
+if submitted:
 
-    puntaje = 0
+    input_data = pd.DataFrame({
+        "Pregnancies": [pregnancies],
+        "Glucose": [glucose],
+        "BloodPressure": [blood_pressure],
+        "SkinThickness": [skin_thickness],
+        "Insulin": [insulin],
+        "BMI": [bmi],
+        "DiabetesPedigreeFunction": [diabetes_pedigree],
+        "Age": [age]
+    })
 
-    for i, respuesta_usuario in enumerate(respuestas_usuario):
+    try:
+        prediction = model.predict(input_data)[0]
 
-        respuesta_correcta = st.session_state.quiz[i]["respuesta"]
+        # Probabilidades, si el modelo las soporta
+        if hasattr(model, "predict_proba"):
+            probabilities = model.predict_proba(input_data)[0]
+            probability_negative = probabilities[0]
+            probability_positive = probabilities[1]
+        else:
+            probability_negative = None
+            probability_positive = None
 
-        if respuesta_usuario == respuesta_correcta:
-            puntaje += 1
+        st.divider()
 
-    st.session_state.resultado = puntaje
+        if prediction == 1:
+            st.error("⚠️ Resultado: POSITIVO (1)")
+        else:
+            st.success("✅ Resultado: NEGATIVO (0)")
 
+        if probability_negative is not None:
 
-# ---------------------------------------------------------
-# MOSTRAR RESULTADO
-# ---------------------------------------------------------
+            st.subheader("Probabilidades")
 
-if st.session_state.resultado is not None:
+            col1, col2 = st.columns(2)
 
-    puntaje = st.session_state.resultado
+            with col1:
+                st.metric(
+                    "Negativo (0)",
+                    f"{probability_negative:.2%}"
+                )
 
-    st.divider()
+            with col2:
+                st.metric(
+                    "Positivo (1)",
+                    f"{probability_positive:.2%}"
+                )
 
-    st.header("📊 Resultado")
+            st.progress(
+                float(probability_positive),
+                text=f"Probabilidad de clase 1: {probability_positive:.2%}"
+            )
 
-    st.metric(
-        label="Puntaje",
-        value=f"{puntaje}/5"
-    )
+        st.subheader("Datos utilizados")
 
-    if puntaje == 5:
-
-        st.success("🎉 ¡Excelente! Respondiste todas correctamente.")
-
-        # Animación de celebración
-        st.balloons()
-
-        st.write(
-            "🏆 ¡Dominaste este quiz básico de Machine Learning!"
+        st.dataframe(
+            input_data,
+            use_container_width=True,
+            hide_index=True
         )
 
-    elif puntaje >= 3:
-
-        st.info(
-            f"👍 ¡Buen trabajo! Obtuviste {puntaje} de 5 respuestas correctas."
+    except Exception as e:
+        st.error(
+            f"Ocurrió un error al realizar la predicción: {e}"
         )
-
-    else:
-
-        st.warning(
-            f"📚 Obtuviste {puntaje} de 5. "
-            "Puedes intentarlo nuevamente para seguir practicando."
-        )
-
-
-# ---------------------------------------------------------
-# NUEVO QUIZ
-# ---------------------------------------------------------
-
-st.divider()
-
-if st.button("🔄 Nuevo quiz", use_container_width=True):
-
-    st.session_state.quiz = crear_quiz()
-    st.session_state.resultado = None
-
-    st.rerun()
