@@ -94,7 +94,7 @@ PREGUNTAS = [
             "Para eliminar errores de programación",
             "Para guardar únicamente imágenes"
         ],
-        "respuesta": "Para evaluar el rendimiento del modelo con datos que ya memorizó"
+        "respuesta": "Para entrenar siempre el modelo desde cero"
     },
     {
         "pregunta": "¿Cuál de estos problemas puede resolverse mediante clasificación?",
